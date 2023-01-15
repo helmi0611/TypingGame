@@ -1,0 +1,128 @@
+﻿@page "/"
+@using TypingGame.Models
+<style>
+    /*tampilan game*/
+    .game-text {
+        font-size : 72px;
+        font-weight: bold;
+        margin-right 4px;
+    }
+    /*warna ketika inputan benar*/
+.correct 
+    {
+        color: green;
+    }
+    /*warna ketika inputan salah*/
+    .wrong 
+    {
+        color: red;
+    }
+</style>
+
+<div @ref="parentDiv" @onkeydown="OnType" tabindex="0">
+    <div class="row">
+        <div class="col - 12">
+            <div class="card">
+                <div class="body">
+                    @for(var ch =0; ch < generatedChar.Length; ch++)
+                    {
+                        <span class="game-text @status[ch]">
+                            @generatedChar[ch]
+                        </span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col - 12">
+            <div class="card">
+                <div class="body">
+
+                    <span> Correct : @stats.Correct</span>
+                    <span> Missed : @stats.Missed</span>
+                    <span> Total : @stats.Total</span>
+                    <span> Accuracy : @stats.Accuracy %</span>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@code {
+    // Div di atas untuk tampilannya dan kita menggunakan class classnya untuk bisa mengubah tampilan nya dan stylenya
+    string alphabet = "QWERTYUIOPLKJHGFDSAZXCVBNM"; // Untuk di bandingkan dengan keyboard 
+    char[] generatedChar = new char[7]; // Array untuk si charnya 
+    string[] status = new string[7];// status nya ketika kita menekan keyboard benar atau salah
+    Random random = new Random();
+
+    Stats stats;
+    public ElementReference parentDiv;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await parentDiv.FocusAsync();
+    }
+
+
+    //Mereset Game
+    private void SetUpGame()
+    {
+        stats = new Stats();
+        ///// Untuk Menghitung progress game
+        stats.Correct = 0;
+        stats.Missed = 0;
+        stats.Total = 0;
+        stats.Accuracy = 0;
+        ////////////////////////////////////
+
+        // Tampilan huruf acak
+        for (int i =0; i <7 ; i++)
+        {
+            generatedChar[i] = alphabet[random.Next(alphabet.Length)];
+        }
+    }
+
+    protected override void OnInitialized()// Memulai game 
+    {
+        SetUpGame();
+    }
+
+    int cursor = 0;
+    public void OnType(KeyboardEventArgs e)// Tombol aksi keyboard
+    {
+        if (e.Key == generatedChar[cursor].ToString().ToLower())// membandingkan char dan sstring terus di convert ke string dan huruf nya di keyboard dijadikan kecil
+        {
+            stats.Correct++; // Menambah progres ketika input benar 
+            status[cursor] = "correct"; // Status 
+            cursor++; //cursor berpindah
+
+
+            if (cursor == 7)// ketika sudah benar semua maka huruf di refresh
+            {
+                status = new String[7];
+                cursor = 0;// cursornya di reset agar kembali ke huruf awal
+                for (int i = 0; i < 7; i++)
+                {
+                    generatedChar[i] = alphabet[random.Next(alphabet.Length)];
+                }
+            }
+
+        }
+        else
+        {
+            stats.Missed++; // progres missed bertambah
+            cursor = 0; // mereset cursor
+            status[cursor] = "wrong"; //status salah
+            if (stats.Missed == 5)// mereset game ketika inputan salah 5 kali
+            {
+                SetUpGame();
+            }
+
+        }
+
+        stats.total();
+        stats.CountAccuracy();
+    }
+}
